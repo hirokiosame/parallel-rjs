@@ -8,6 +8,10 @@
     "watch": "node_modules/babel-cli/bin/babel.js ./src -s inline --out-dir ./dist --watch",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/hirokiosame/parallel-rjs.git"
+  },
   "author": "Hiroki Osame",
   "license": "MIT",
   "devDependencies": {
@@ -19,5 +23,9 @@
     "requirejs": "^2.2.0",
     "uglify-js": "^2.6.2",
     "source-map-support": "^0.4.0"
-  }
+  },
+  "bugs": {
+    "url": "https://github.com/hirokiosame/parallel-rjs/issues"
+  },
+  "homepage": "https://github.com/hirokiosame/parallel-rjs#readme"
 }
