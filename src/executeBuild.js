@@ -7,13 +7,15 @@ import mkdirP from './utils/mkdirP';
 import { exec } from 'child_process';
 
 
+const TMPDIR = process.env.TMPDIR || '/tmp';
+
 export default function executeBuild(buildConfig){
 
 	const	buildID = (~~(Math.random() * 1000000000)).toString(36);
 
 	// Not really unique... optimize later
 	const	buildDir = buildConfig.dir,
-			tempBuildDir = buildConfig.dir = path.join(process.env.TMPDIR, 'rjsBuild' + buildID);
+			tempBuildDir = buildConfig.dir = path.join(TMPDIR, 'rjsBuild' + buildID);
 
 
 	// Make output directories
