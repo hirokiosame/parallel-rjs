@@ -24,11 +24,14 @@ export default function executeBuild(buildConfig){
 	let optimize = buildConfig.optimize;
 	buildConfig.optimize = 'none';
 
+	console.log('Building ID:', buildID, JSON.stringify(buildConfig.modules, null, 4), '\n');
 
 	requirejs.optimize(
 		buildConfig,
 
 		function (){
+
+			console.log('Successfully built', buildID);
 
 			// Move built modules to right destination
 			for (let module of buildConfig.modules) {

@@ -57,7 +57,7 @@ if (cluster.isMaster) {
 	// Multiple outputs
 	if (buildConfig.modules instanceof Array) {
 
-		let moduleGroups = groupModulesByDep(buildConfig.modules/*.splice(0, 1)*/);
+		let moduleGroups = groupModulesByDep(buildConfig.modules);
 
 		for (let moduleGroup of moduleGroups) {
 
