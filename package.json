@@ -20,9 +20,10 @@
     "babel-preset-stage-0": "^6.5.0"
   },
   "dependencies": {
+    "babel-polyfill": "^6.7.4",
     "requirejs": "^2.2.0",
-    "uglify-js": "^2.6.2",
-    "source-map-support": "^0.4.0"
+    "source-map-support": "^0.4.0",
+    "uglify-js": "^2.6.2"
   },
   "bugs": {
     "url": "https://github.com/hirokiosame/parallel-rjs/issues"
