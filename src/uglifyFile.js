@@ -2,13 +2,14 @@
 
 import fs from 'fs';
 import uglifyjs from 'uglify-js';
+import log from './utils/log';
 
 export default function uglifyFile(request) {
 
 	let { filePath, config } = request;
 
 	// Log which file it's minifying
-	console.log('Uglifying', filePath);
+	log('Uglifying', filePath);
 
 	// Minify
 	try {
@@ -18,8 +19,7 @@ export default function uglifyFile(request) {
 	catch (e) {
 
 		// Log error
-		console.error('Error minifying:', filePath);
-		console.error(e);
+		log('Error uglifying:', filePath, e);
 
 		// Exit with failure
 		process.exit(1);

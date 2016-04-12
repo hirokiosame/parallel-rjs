@@ -11,6 +11,7 @@ import groupModulesByDep from './utils/groupModulesByDep';
 import executeBuild from './executeBuild';
 import uglifyFile from './uglifyFile';
 
+import log from './utils/log';
 
 
 function forkTask(request){
@@ -39,10 +40,12 @@ if (cluster.isWorker) {
 	process.on('message', function(request){
 
 		if (request.task === 'build') {
+			log('Spawned r.js builder');
 			executeBuild(request.config);
 		}
 
 		if (request.task === 'uglify2') {
+			log('Spawned uglifier');
 			uglifyFile(request.config);
 		}
 	});

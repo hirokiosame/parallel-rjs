@@ -5,17 +5,24 @@ import path from 'path';
 import requirejs from 'requirejs';
 import mkdirP from './utils/mkdirP';
 import { exec } from 'child_process';
+import log from './utils/log';
 
 
 const TMPDIR = process.env.TMPDIR || '/tmp';
 
-export default function executeBuild(buildConfig){
 
-	const	buildID = (~~(Math.random() * 1000000000)).toString(36);
+function untilN(n, cb) {
+	return function() {
+		(--n === 0) && cb();
+	};
+}
+
+
+export default function executeBuild(buildConfig){
 
 	// Not really unique... optimize later
 	const	buildDir = buildConfig.dir,
-			tempBuildDir = buildConfig.dir = path.join(TMPDIR, 'rjsBuild' + buildID);
+			tempBuildDir = buildConfig.dir = path.join(TMPDIR, 'rjsBuild' + process.pid.toString(36));
 
 
 	// Make output directories
@@ -24,14 +31,30 @@ export default function executeBuild(buildConfig){
 	let optimize = buildConfig.optimize;
 	buildConfig.optimize = 'none';
 
-	console.log('Building ID:', buildID, JSON.stringify(buildConfig.modules, null, 4), '\n');
+
+	let startTime = new Date();
+
+	log('Starting build', JSON.stringify(buildConfig.modules, null, 4), 'in', tempBuildDir);
 
 	requirejs.optimize(
 		buildConfig,
 
 		function (){
 
-			console.log('Successfully built', buildID);
+			let elapsedTime = ((new Date()) - startTime) / 1000;
+
+			log(`Successfully built in ${elapsedTime}s`);
+
+			let moved = untilN(buildConfig.modules.length, function cleanUp(){
+
+				// Delete build directory (fs.rmdirSync complains about deleteing a directory with content)
+				exec('rm -rf ' + tempBuildDir, function(err){
+					if (err) { log(err); }
+
+					process.exit(0);
+				});
+			});
+
 
 			// Move built modules to right destination
 			for (let module of buildConfig.modules) {
@@ -40,24 +63,23 @@ export default function executeBuild(buildConfig){
 				let destPath = path.join(buildDir, module.name + '.js');
 
 				// Move to real output dir
-				fs.renameSync(buildPath, destPath);
+				// fs.renameSync(buildPath, destPath); - makes the syscall 'rename'
+				// Caused issues: Error: EXDEV, cross-device link not permitted '/tmp/tmp.Fsi71cf/rjsBuildcnjf/test.js'
 
-				if (optimize === 'uglify2') {
-					process.send({
-						filePath: destPath,
-						config: buildConfig.uglify2
-					});
-				}
+				exec(`mv ${buildPath} ${destPath}`, function(err){
+
+					if (err) { throw log(err); }
+
+					if (optimize === 'uglify2') {
+						process.send({
+							filePath: destPath,
+							config: buildConfig.uglify2
+						});
+					}
+
+					moved();
+				});
 			}
-
-			// Delete build directory (fs.rmdirSync complains about deleteing a directory with content)
-			exec('rm -rf ' + tempBuildDir, function(err){
-				if (err) {
-					console.error(err);
-				}
-				process.exit(0);
-			});
-
 		},
 
 		(err => { throw err; })
