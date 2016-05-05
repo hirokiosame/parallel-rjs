@@ -3,6 +3,8 @@
 import 'babel-polyfill';
 import 'source-map-support/register';
 
+import { argv } from 'yargs';
+
 import cluster from 'cluster';
 
 import readBuildConfig from './utils/readBuildConfig';
@@ -55,7 +57,7 @@ if (cluster.isWorker) {
 if (cluster.isMaster) {
 
 	// Read r.js config file
-	let	buildConfig = readBuildConfig(process.argv[2]);
+	let	buildConfig = readBuildConfig(argv._[0]);
 
 	// Multiple outputs
 	if (buildConfig.modules instanceof Array) {
@@ -76,10 +78,12 @@ if (cluster.isMaster) {
 			// Uglification request
 			.on('message', function(config){
 
-				forkTask({
-					task: 'uglify2',
-					config
-				});
+				if (argv.optimize === 'uglify2') {
+					forkTask({
+						task: 'uglify2',
+						config
+					});	
+				}
 			});
 		}
 	}
