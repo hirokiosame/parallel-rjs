@@ -1,9 +1,8 @@
 'use strict';
 
-import fs from 'fs';
+import fs from 'fs-extra';
 import path from 'path';
 import requirejs from 'requirejs';
-import mkdirP from './utils/mkdirP';
 import { exec } from 'child_process';
 import log from './utils/log';
 
@@ -20,17 +19,10 @@ function untilN(n, cb) {
 
 export default function executeBuild(buildConfig){
 
+	const buildDir = buildConfig.dir;
+
 	// Not really unique... optimize later
-	const	buildDir = buildConfig.dir,
-			tempBuildDir = buildConfig.dir = path.join(TMPDIR, 'rjsBuild' + process.pid.toString(36));
-
-
-	// Make output directories
-	buildConfig.modules.forEach(module => mkdirP(buildDir, module.name));
-
-	let optimize = buildConfig.optimize;
-	buildConfig.optimize = 'none';
-
+	const tempBuildDir = buildConfig.dir = path.join(TMPDIR, 'rjsBuild' + process.pid.toString(36));
 
 	let startTime = new Date();
 
@@ -39,7 +31,7 @@ export default function executeBuild(buildConfig){
 	requirejs.optimize(
 		buildConfig,
 
-		function (){
+		function () {
 
 			let elapsedTime = ((new Date()) - startTime) / 1000;
 
@@ -48,13 +40,16 @@ export default function executeBuild(buildConfig){
 			let moved = untilN(buildConfig.modules.length, function cleanUp(){
 
 				// Delete build directory (fs.rmdirSync complains about deleteing a directory with content)
-				exec('rm -rf ' + tempBuildDir, function(err){
-					if (err) { log(err); }
+				// let delStart = new Date();
+				// console.log('deleting')
 
+				// fs.remove(tempBuildDir, function(err){
+				// 	if (err) { log(err); }
+				// 	console.log(((new Date()) - delStart)/1000);
+				// 	console.log(arguments);
 					process.exit(0);
-				});
+				// });
 			});
-
 
 			// Move built modules to right destination
 			for (let module of buildConfig.modules) {
@@ -63,25 +58,21 @@ export default function executeBuild(buildConfig){
 				let destPath = path.join(buildDir, module.name + '.js');
 
 				// Move to real output dir
-				// fs.renameSync(buildPath, destPath); - makes the syscall 'rename'
-				// Caused issues: Error: EXDEV, cross-device link not permitted '/tmp/tmp.Fsi71cf/rjsBuildcnjf/test.js'
-
-				exec(`mv ${buildPath} ${destPath}`, function(err){
-
-					if (err) { throw log(err); }
-
-					if (optimize === 'uglify2') {
-						process.send({
-							filePath: destPath,
-							config: buildConfig.uglify2
-						});
+				fs.move(buildPath, destPath, function (err) {
+					if (err) {
+						console.log('move err', err);
+						process.exit(1);
 					}
-
+					// Signal completion
+					process.send({ filePath: destPath });
 					moved();
-				});
+				})
 			}
 		},
 
-		(err => { throw err; })
+		function (err) {
+			console.log('rjs error', err);
+			process.exit(1);
+		}
 	);
 }

@@ -23,7 +23,6 @@ function getModuleDeps(module) {
 	return deps;
 }
 
-
 export default function groupModulesByDep(modulesArr) {
 
 	let moduleMap = {}, groupedModules = [];
@@ -49,23 +48,25 @@ export default function groupModulesByDep(modulesArr) {
 	}
 
 	// Sort by largest
-	groupedModules.sort( (a, b) => a.length - b.length);
-
+	groupedModules.sort((a, b) =>  b.size - a.size);
 
 	for (let i = 0; i < groupedModules.length; i++) {
 
-		for (let j = groupedModules.length-1; j > i; j--) {
+		for (let j = groupedModules.length-1; -1 < j; j--) {
 
-			let intersection = new Set([...groupedModules[i]].filter(x => groupedModules[j].has(x)));
+			if (i === j) { continue; }
+
+			// Check if they have anything in common
+			let intersection = new Set([...groupedModules[j]].filter(x => groupedModules[i].has(x)));
 
 			if (intersection.size > 0) {
 
-				// Union
-				for (let el of groupedModules[i]) {
-					groupedModules[j].add(el);
+				// Merge build groups
+				for (let el of groupedModules[j]) {
+					groupedModules[i].add(el);
 				}
-				groupedModules.splice(i, 1);
-				i--;
+
+				groupedModules.splice(j, 1);
 			}
 		}
 	}

@@ -11,6 +11,8 @@ export default function uglifyFile(request) {
 	// Log which file it's minifying
 	log('Uglifying', filePath);
 
+	let startTime = new Date();
+
 	// Minify
 	try {
 		fs.writeFileSync(filePath, uglifyjs.minify(filePath, config).code);
@@ -26,6 +28,8 @@ export default function uglifyFile(request) {
 	}
 
 	finally {
+		let elapsedTime = ((new Date()) - startTime)/1000;
+		log(`Successfully uglified ${filePath} in ${elapsedTime}s`);
 		process.exit(0);
 	}
 }

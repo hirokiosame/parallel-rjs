@@ -21,6 +21,7 @@
   },
   "dependencies": {
     "babel-polyfill": "^6.7.4",
+    "fs-extra": "^0.30.0",
     "requirejs": "^2.2.0",
     "source-map-support": "^0.4.0",
     "uglify-js": "^2.6.2",
