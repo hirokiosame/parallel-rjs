@@ -14,7 +14,7 @@ process.on('message', function(request){
 
 	if (request.task === 'build') {
 		log('Spawned r.js builder');
-		executeBuild(request.config);
+		executeBuild(request.cwd, request.config);
 	}
 
 	if (request.task === 'uglify2') {

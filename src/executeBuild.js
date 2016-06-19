@@ -17,16 +17,42 @@ function untilN(n, cb) {
 }
 
 
-export default function executeBuild(buildConfig){
+export default function executeBuild(cwd, buildConfig){
 
-	const buildDir = buildConfig.dir;
+	process.chdir(cwd);
 
-	// Not really unique... optimize later
-	const tempBuildDir = buildConfig.dir = path.join(TMPDIR, 'rjsBuild' + process.pid.toString(36));
+	let buildPath, finalBuildDir;
+
+	if (buildConfig.dir) {
+		finalBuildDir = path.resolve(buildConfig.dir);
+
+		// Not really unique... optimize later
+		buildPath = buildConfig.dir = path.join(TMPDIR, 'rjsBuild' + process.pid.toString(36));
+
+		log('Starting build', JSON.stringify(buildConfig.modules, null, 4), 'in', buildPath);
+	}
+
+	else if (buildConfig.out) {
+		buildPath = path.resolve(buildConfig.out);
+
+		log('Starting build', buildPath);
+	}
+
+	let moved = untilN(buildConfig.modules ? buildConfig.modules.length : 1, function cleanUp(){
+
+		// Delete build directory (fs.rmdirSync complains about deleteing a directory with content)
+		// let delStart = new Date();
+		// console.log('deleting')
+
+		// fs.remove(buildPath, function(err){
+		// 	if (err) { log(err); }
+		// 	console.log(((new Date()) - delStart)/1000);
+		// 	console.log(arguments);
+			process.exit(0);
+		// });
+	});
 
 	let startTime = new Date();
-
-	log('Starting build', JSON.stringify(buildConfig.modules, null, 4), 'in', tempBuildDir);
 
 	requirejs.optimize(
 		buildConfig,
@@ -37,32 +63,27 @@ export default function executeBuild(buildConfig){
 
 			log(`Successfully built in ${elapsedTime}s`);
 
-			let moved = untilN(buildConfig.modules.length, function cleanUp(){
+			if (!finalBuildDir) {
 
-				// Delete build directory (fs.rmdirSync complains about deleteing a directory with content)
-				// let delStart = new Date();
-				// console.log('deleting')
+				// Signal completion
+				process.send({ filePath: buildPath });
 
-				// fs.remove(tempBuildDir, function(err){
-				// 	if (err) { log(err); }
-				// 	console.log(((new Date()) - delStart)/1000);
-				// 	console.log(arguments);
-					process.exit(0);
-				// });
-			});
+				return moved();
+			}
 
 			// Move built modules to right destination
 			for (let module of buildConfig.modules) {
 
-				let buildPath = path.join(tempBuildDir, module.name + '.js');
-				let destPath = path.join(buildDir, module.name + '.js');
+				let srcPath = path.join(buildPath, module.name + '.js');
+				let destPath = path.join(finalBuildDir, module.name + '.js');
 
 				// Move to real output dir
-				fs.move(buildPath, destPath, function (err) {
+				fs.move(srcPath, destPath, { clobber: true }, function (err) {
 					if (err) {
 						console.log('move err', err);
 						process.exit(1);
 					}
+
 					// Signal completion
 					process.send({ filePath: destPath });
 					moved();
