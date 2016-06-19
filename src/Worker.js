@@ -1,7 +1,7 @@
 
 'use strict';
 
-// import 'babel-polyfill';
+import 'babel-polyfill';
 import 'source-map-support/register';
 
 import log from './utils/log';
