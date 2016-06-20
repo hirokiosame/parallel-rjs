@@ -1,25 +1,18 @@
 'use strict';
 
-import 'babel-polyfill';
 import 'source-map-support/register';
+import 'babel-polyfill';
 
 import { argv } from 'yargs';
-
-
+import path from 'path';
 import readBuildConfig from './utils/readBuildConfig';
 import groupModulesByDep from './utils/groupModulesByDep';
-import forkTask from './utils/forkTask';
-
-import log from './utils/log';
-
-
-import fs from 'fs-extra';
-import path from 'path';
-import util from 'util';
-
+import spawnBuild from './utils/spawnBuild';
 
 
 for (let buildConfigPath of argv._) {
+
+	let workingDir = path.dirname(buildConfigPath);
 
 	// Read r.js config file
 	let buildConfig = readBuildConfig(buildConfigPath);
@@ -28,11 +21,9 @@ for (let buildConfigPath of argv._) {
 	buildConfig.removeCombined = false;
 
 	// Save optimize config and disable rjs so we can handle it
-	let optimize = buildConfig.optimize;
+	let optimizeConfig = (argv.optimize || buildConfig.optimize) === 'uglify2';
 	buildConfig.optimize = 'none';
 
-
-	buildConfigPath = path.dirname(buildConfigPath);
 
 	// Multiple outputs
 	if (buildConfig.modules instanceof Array) {
@@ -43,56 +34,14 @@ for (let buildConfigPath of argv._) {
 
 			buildConfig.modules = moduleGroup;
 
-			// Spawn fork and send task
-			// Note: Consider only spawning only the number CPU the computer has to reduce intensiveness
-			forkTask({
-				task: 'build',
-				cwd: buildConfigPath,
-				config: buildConfig
-			})
-
-			// Completion
-			.on('message', function(config){
-
-				console.log('completed!', config, argv.optimize, optimize)
-				if ((argv.optimize || optimize) === 'uglify2') {
-
-					forkTask({
-						task: 'uglify2',
-						config: {
-							filePath: config.filePath,
-							config: buildConfig.uglify2
-						}
-					});
-				}
-			});
+			spawnBuild(workingDir, buildConfig, optimizeConfig);
 		}
 	}
 
 	// Output is a file
 	else if (typeof buildConfig.out === 'string') {
 
-		forkTask({
-			task: 'build',
-			cwd: buildConfigPath,
-			config: buildConfig
-		})
-
-		// Completion
-		.on('message', function(config){
-
-			if ((argv.optimize || optimize) === 'uglify2') {
-
-				forkTask({
-					task: 'uglify2',
-					config: {
-						filePath: config.filePath,
-						config: buildConfig.uglify2
-					}
-				});
-			}
-		});
-
+		spawnBuild(workingDir, buildConfig, optimizeConfig);
 
 	} else {
 		throw new Error('Properties \'modules\' or \'out\' not defined in the config file');

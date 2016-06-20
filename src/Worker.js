@@ -1,11 +1,9 @@
-
 'use strict';
 
-import 'babel-polyfill';
 import 'source-map-support/register';
+import 'babel-polyfill';
 
 import log from './utils/log';
-
 import executeBuild from './executeBuild';
 import uglifyFile from './uglifyFile';
 
@@ -14,7 +12,7 @@ process.on('message', function(request){
 
 	if (request.task === 'build') {
 		log('Spawned r.js builder');
-		executeBuild(request.cwd, request.config);
+		executeBuild(request.cwd, request.buildConfig);
 	}
 
 	if (request.task === 'uglify2') {

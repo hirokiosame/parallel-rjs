@@ -1,4 +1,3 @@
-
 'use strict';
 
 import child_process from 'child_process';
@@ -6,7 +5,8 @@ import log from './log';
 
 let workers = new Set();
 let instances = 0;
-export default function forkTask (request){
+
+function forkTask (request){
 
 	let worker = child_process.fork(__dirname + '/../Worker.js')
 
@@ -34,4 +34,30 @@ export default function forkTask (request){
 	worker.send(request);
 
 	return worker;
-};
+}
+
+function spawnUglification (buildConfig, config) {
+
+	return forkTask({
+		task: 'uglify2',
+		config: {
+			filePath: config.filePath,
+			config: buildConfig.uglify2
+		}
+	});
+}
+
+export default function spawnBuild (cwd, buildConfig, optimize) {
+
+	let worker = forkTask({
+		task: 'build',
+		cwd,
+		buildConfig
+	});
+
+	if (optimize) {
+		worker.on('message', spawnUglification.bind(this, buildConfig));
+	}
+
+	return worker;
+}

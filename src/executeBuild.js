@@ -3,19 +3,14 @@
 import fs from 'fs-extra';
 import path from 'path';
 import requirejs from 'requirejs';
-import { exec } from 'child_process';
 import log from './utils/log';
 
 
 const TMPDIR = process.env.TMPDIR || '/tmp';
 
-
 function untilN(n, cb) {
-	return function() {
-		(--n === 0) && cb();
-	};
+	return () => (--n === 0) && cb();
 }
-
 
 export default function executeBuild(cwd, buildConfig){
 
@@ -38,12 +33,9 @@ export default function executeBuild(cwd, buildConfig){
 		log('Starting build', buildPath);
 	}
 
-	let moved = untilN(buildConfig.modules ? buildConfig.modules.length : 1, function cleanUp(){
+	let moved = untilN(buildConfig.modules ? buildConfig.modules.length : 1, function cleanUp () {
 
-		// Delete build directory (fs.rmdirSync complains about deleteing a directory with content)
 		// let delStart = new Date();
-		// console.log('deleting')
-
 		// fs.remove(buildPath, function(err){
 		// 	if (err) { log(err); }
 		// 	console.log(((new Date()) - delStart)/1000);
@@ -87,7 +79,7 @@ export default function executeBuild(cwd, buildConfig){
 					// Signal completion
 					process.send({ filePath: destPath });
 					moved();
-				})
+				});
 			}
 		},
 
